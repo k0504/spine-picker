@@ -27,7 +27,7 @@
     // Bump on every meaningful change. dist's @version is derived from this
     // by build.py — bump CORE_VERSION → run build.py → commit dist/ to push
     // an update to end users (TM only auto-updates when @version increases).
-    var CORE_VERSION = '0.2.1';
+    var CORE_VERSION = '0.3.0';
 
     // Defensive: if bootstrap fires twice (shouldn't, but) or dist + dev
     // bootstrap are both installed, the second load no-ops.
@@ -50,9 +50,18 @@
         currentTarget: null,
     };
 
-    // 設定：持久化到 GM storage
+    // Settings: persisted to GM storage. To add a new setting:
+    //   1. Add an entry to SETTINGS_KEYS (key + default).
+    //   2. Add a corresponding line to SETTINGS init.
+    //   3. Add a toggle*() function below.
+    //   4. Add menu + (optional) keyboard shortcut wiring at the bottom.
+    //   5. Add the on/off labels to STRINGS.en / STRINGS.zh.
     const SETTINGS_KEYS = {
-        expandSiblings: { key: 'expandSiblings', default: false, label: '同級展開' },
+        expandSiblings: { key: 'expandSiblings', default: false },
+        expandToLeaves: { key: 'expandToLeaves', default: false },
+        // 'en' | 'zh' — UI language. Clipboard output stays English regardless
+        // (it's payload for an LLM, not a UI string).
+        language:       { key: 'language',       default: 'en' },
     };
 
     function loadSetting(name) {
@@ -67,7 +76,79 @@
 
     const SETTINGS = {
         expandSiblings: loadSetting('expandSiblings'),
+        expandToLeaves: loadSetting('expandToLeaves'),
+        language:       loadSetting('language'),
     };
+
+    // Cap for "expand to leaves" mode — picking <body> on a complex page
+    // would otherwise blow up the clipboard. 300 elements ≈ ~30KB of HTML
+    // output, comfortable for paste-to-LLM scenarios.
+    const LEAVES_MAX_DESCENDANTS = 300;
+
+    // ============================================================
+    //  i18n
+    //
+    //  UI strings only. Clipboard HTML output stays English regardless
+    //  of the selected language — mixing locales in machine-consumed
+    //  payloads is a footgun, and LLMs handle English consistently.
+    // ============================================================
+    const STRINGS = {
+        en: {
+            bannerLabel:   'Spine Picker | Click to copy | Esc cancel | S siblings | D leaves | L lang',
+            siblingsOn:    'siblings:on',
+            siblingsOff:   'siblings:off',
+            leavesOn:      'leaves:on',
+            leavesOff:     'leaves:off',
+            langNameEn:    'English',
+            langNameZh:    '中文',
+
+            menuTogglePicker: 'Spine Picker: Toggle pick mode (Ctrl+Shift+E)',
+            menuSiblings:  (on)   => `Spine Picker: Expand siblings (currently: ${on ? 'ON' : 'OFF'})`,
+            menuLeaves:    (on)   => `Spine Picker: Expand to leaves (currently: ${on ? 'ON' : 'OFF'})`,
+            menuLang:      (lang) => `Spine Picker: Language (currently: ${lang === 'zh' ? '中文' : 'English'})`,
+
+            toastSiblings: (on)   => `Expand siblings: ${on ? 'ON' : 'OFF'}`,
+            toastLeaves:   (on)   => `Expand to leaves: ${on ? 'ON' : 'OFF'}`,
+            toastLang:     (lang) => `Language: ${lang === 'zh' ? '中文' : 'English'}`,
+            toastCopied:   (depth, sib, lvs, sel) =>
+                `Copied ancestor spine\nDepth: ${depth} layers / siblings: ${sib} / descendants: ${lvs}\nselector: ${sel}`,
+            toastCaptureFailed: (msg) => `Capture failed: ${msg}`,
+
+            menuRegisterFailWarn:   'GM_registerMenuCommand failed, use Ctrl+Shift+E instead:',
+            siblingsMenuRegisterFailWarn: 'siblings menu register failed, press S during pick to toggle:',
+        },
+        zh: {
+            bannerLabel:   'Spine Picker | 點擊元素複製 | Esc 取消 | S 同級 | D 探底 | L 語言',
+            siblingsOn:    '同級:開',
+            siblingsOff:   '同級:關',
+            leavesOn:      '探底:開',
+            leavesOff:     '探底:關',
+            langNameEn:    'English',
+            langNameZh:    '中文',
+
+            menuTogglePicker: 'Spine Picker: 切換拾取模式 (Ctrl+Shift+E)',
+            menuSiblings:  (on)   => `Spine Picker: 同級展開（目前：${on ? '開' : '關'}）`,
+            menuLeaves:    (on)   => `Spine Picker: 探到最底層（目前：${on ? '開' : '關'}）`,
+            menuLang:      (lang) => `Spine Picker: 語言（目前：${lang === 'zh' ? '中文' : 'English'}）`,
+
+            toastSiblings: (on)   => `同級展開：${on ? '開' : '關'}`,
+            toastLeaves:   (on)   => `探到最底層：${on ? '開' : '關'}`,
+            toastLang:     (lang) => `語言：${lang === 'zh' ? '中文' : 'English'}`,
+            toastCopied:   (depth, sib, lvs, sel) =>
+                `已複製祖先脊椎\n深度: ${depth} 層 / 同級: ${sib} / 子孫: ${lvs}\nselector: ${sel}`,
+            toastCaptureFailed: (msg) => `擷取失敗：${msg}`,
+
+            menuRegisterFailWarn:   'GM_registerMenuCommand 失敗，請用 Ctrl+Shift+E 啟動：',
+            siblingsMenuRegisterFailWarn: '同級展開 menu 註冊失敗，請用拾取模式中按 S 切換：',
+        },
+    };
+
+    function t(key, ...args) {
+        const bag = STRINGS[SETTINGS.language] || STRINGS.en;
+        const v = bag[key] !== undefined ? bag[key] : STRINGS.en[key];
+        if (v === undefined) return key;
+        return typeof v === 'function' ? v(...args) : v;
+    }
 
     // ============================================================
     //  Styles
@@ -141,8 +222,12 @@
     }
 
     function bannerText() {
-        const sib = SETTINGS.expandSiblings ? '同級展開:開' : '同級展開:關';
-        return `Spine Picker | 點擊元素複製 | Esc 取消 | S 切換${sib}`;
+        // The "S/D/L toggle" hints are part of the static label (`bannerLabel`).
+        // The state badges (siblings:on / leaves:off) trail behind so the
+        // banner always reflects current settings without re-creating the DOM.
+        const sib = t(SETTINGS.expandSiblings ? 'siblingsOn' : 'siblingsOff');
+        const lvs = t(SETTINGS.expandToLeaves ? 'leavesOn'   : 'leavesOff');
+        return `${t('bannerLabel')} | ${sib} | ${lvs}`;
     }
 
     function makeBanner() {
@@ -236,7 +321,7 @@
         const target = STATE.currentTarget || document.elementFromPoint(e.clientX, e.clientY);
         if (target) {
             try { capture(target); }
-            catch (err) { console.error('[Spine Picker] capture failed', err); showToast('擷取失敗：' + err.message); }
+            catch (err) { console.error('[Spine Picker] capture failed', err); showToast(t('toastCaptureFailed', err.message)); }
         }
         deactivate();
     }
@@ -248,11 +333,20 @@
             deactivate();
             return;
         }
-        // 拾取模式中按 S 切換「同級展開」
-        if ((e.key === 's' || e.key === 'S') && !e.ctrlKey && !e.altKey && !e.metaKey) {
-            e.preventDefault();
-            e.stopPropagation();
+        if (e.ctrlKey || e.altKey || e.metaKey) return;
+        const k = (e.key || '').toLowerCase();
+        // S/D/L are pick-mode shortcuts for the three toggle settings.
+        // Mirrored on the banner text (`bannerLabel` in STRINGS) so the
+        // user sees them without opening the TM menu.
+        if (k === 's') {
+            e.preventDefault(); e.stopPropagation();
             toggleExpandSiblings();
+        } else if (k === 'd') {
+            e.preventDefault(); e.stopPropagation();
+            toggleExpandToLeaves();
+        } else if (k === 'l') {
+            e.preventDefault(); e.stopPropagation();
+            toggleLanguage();
         }
     }
 
@@ -324,10 +418,41 @@
     }
 
     function getTextSummary(el) {
-        // direct text-only content (not deep) — useful if it's a leaf
-        const t = (el.textContent || '').trim().replace(/\s+/g, ' ');
-        if (!t) return '';
-        return t.length > 100 ? t.slice(0, 97) + '...' : t;
+        // Deep concatenation — used for sibling one-line summary and for the
+        // non-leaves rendering of TARGET (where children are pruned and we
+        // want to show "what's in there" in one shot).
+        const txt = (el.textContent || '').trim().replace(/\s+/g, ' ');
+        if (!txt) return '';
+        return txt.length > 100 ? txt.slice(0, 97) + '...' : txt;
+    }
+
+    function getDirectText(el) {
+        // Only direct text-node children. Used by expandToLeaves rendering
+        // — if we used textContent here, every ancestor level would repeat
+        // the same concatenated string (textContent is recursive).
+        let s = '';
+        for (const node of el.childNodes) {
+            if (node.nodeType === 3) s += node.nodeValue;
+        }
+        s = s.trim().replace(/\s+/g, ' ');
+        if (!s) return '';
+        return s.length > 100 ? s.slice(0, 97) + '...' : s;
+    }
+
+    function renderDescendant(el, indent, stats) {
+        // Recursive renderer for expandToLeaves mode. `stats` carries the
+        // descendant counter + truncation flag across the recursion so the
+        // first call site knows whether to append a truncation comment.
+        if (stats.count >= stats.limit) { stats.truncated = true; return ''; }
+        stats.count++;
+        let html = `${indent}${buildOpenTag(el)}\n`;
+        const text = getDirectText(el);
+        if (text) html += `${indent}  ${escAttr(text)}\n`;
+        for (const child of el.children) {
+            html += renderDescendant(child, indent + '  ', stats);
+            if (stats.truncated) break;
+        }
+        return html;
     }
 
     function uniqueSelector(el) {
@@ -369,13 +494,29 @@
     }
 
     function renderTargetLine(el, indent, posNote) {
-        // posNote 例如 " (child 3/5)"，無位置資訊時傳空字串
+        // posNote like " (child 3/5)"; pass empty string when no positional info.
         let html = `${indent}${buildOpenTag(el)}  <!-- TARGET${posNote} -->\n`;
-        const text = getTextSummary(el);
-        if (text) html += `${indent}  ${escAttr(text)}\n`;
-        const childCount = el.children.length;
-        if (childCount > 0) {
-            html += `${indent}  <!-- ...${childCount} child node${childCount > 1 ? 's' : ''} omitted... -->\n`;
+        if (SETTINGS.expandToLeaves) {
+            // Leaves mode: recurse all descendants, direct text per node, with
+            // a cap so picking <body> on a complex page doesn't blow up the
+            // clipboard. See LEAVES_MAX_DESCENDANTS at top of file.
+            const text = getDirectText(el);
+            if (text) html += `${indent}  ${escAttr(text)}\n`;
+            const stats = { count: 0, limit: LEAVES_MAX_DESCENDANTS, truncated: false };
+            for (const child of el.children) {
+                html += renderDescendant(child, indent + '  ', stats);
+                if (stats.truncated) break;
+            }
+            if (stats.truncated) {
+                html += `${indent}  <!-- ...truncated at ${stats.limit} descendants -->\n`;
+            }
+        } else {
+            const text = getTextSummary(el);
+            if (text) html += `${indent}  ${escAttr(text)}\n`;
+            const childCount = el.children.length;
+            if (childCount > 0) {
+                html += `${indent}  <!-- ...${childCount} child node${childCount > 1 ? 's' : ''} omitted... -->\n`;
+            }
         }
         return html;
     }
@@ -442,61 +583,116 @@
         const url = location.href;
         const tagPath = chain.map(e => e.tagName.toLowerCase()).join(' > ');
         const sibMode = SETTINGS.expandSiblings ? 'expanded' : 'pruned';
+        const lvsMode = SETTINGS.expandToLeaves ? 'leaves'   : 'pruned';
+        // Clipboard output stays English regardless of UI language — see
+        // STRINGS block: this is payload for an LLM, not a UI string.
         const out =
-            `<!-- url:      ${url} -->\n` +
-            `<!-- selector: ${sel} -->\n` +
-            `<!-- depth:    ${chain.length} layers (${tagPath}) -->\n` +
-            `<!-- siblings: ${sibMode} -->\n\n` +
+            `<!-- url:        ${url} -->\n` +
+            `<!-- selector:   ${sel} -->\n` +
+            `<!-- depth:      ${chain.length} layers (${tagPath}) -->\n` +
+            `<!-- siblings:   ${sibMode} -->\n` +
+            `<!-- descendants:${lvsMode} -->\n\n` +
             html;
 
         GM_setClipboard(out);
 
         const briefSel = sel.length > 70 ? sel.slice(0, 67) + '...' : sel;
-        showToast(`已複製祖先脊椎\n深度: ${chain.length} 層 / 同級: ${sibMode}\nselector: ${briefSel}`);
+        showToast(t('toastCopied', chain.length, sibMode, lvsMode, briefSel));
         console.log('[Spine Picker] copied:\n' + out);
     }
 
     // ============================================================
     //  Triggers + Menu
+    //
+    //  All four TM menu items live in MENU_IDS and are reregistered
+    //  together whenever a label-affecting setting changes (siblings /
+    //  leaves toggle update one label each; language toggle rewrites
+    //  all four). This avoids stale labels and keeps the registration
+    //  logic in one place — easier to extend with new toggles.
     // ============================================================
-    try {
-        const id = GM_registerMenuCommand('Spine Picker: 切換拾取模式 (Ctrl+Shift+E)', () => {
-            STATE.active ? deactivate() : activate();
-        });
-        console.log('[Spine Picker] menu registered (toggle picker), id =', id);
-    } catch (err) {
-        console.warn('[Spine Picker] GM_registerMenuCommand 失敗，請用 Ctrl+Shift+E 啟動：', err);
+    const MENU_IDS = {
+        togglePicker: null,
+        siblings:     null,
+        leaves:       null,
+        lang:         null,
+    };
+
+    function safeUnregister(id) {
+        if (id == null) return;
+        if (typeof GM_unregisterMenuCommand !== 'function') return;
+        try { GM_unregisterMenuCommand(id); } catch (_) {}
     }
 
-    // 同級展開 toggle — 嘗試動態重註冊，不支援時退回靜態標籤 + toast 提示
-    let siblingsMenuId = null;
-    function siblingsLabel() {
-        return `Spine Picker: 同級展開（目前：${SETTINGS.expandSiblings ? '開' : '關'}）`;
-    }
-    function registerSiblingsMenu() {
+    function safeRegister(label, fn, slot) {
         try {
-            siblingsMenuId = GM_registerMenuCommand(siblingsLabel(), toggleExpandSiblings);
-            console.log('[Spine Picker] menu registered (siblings), id =', siblingsMenuId, 'label =', siblingsLabel());
+            MENU_IDS[slot] = GM_registerMenuCommand(label, fn);
         } catch (err) {
-            siblingsMenuId = null;
-            console.warn('[Spine Picker] 同級展開 menu 註冊失敗，請用拾取模式中按 S 切換：', err);
+            MENU_IDS[slot] = null;
+            if (slot === 'togglePicker') {
+                console.warn('[Spine Picker]', t('menuRegisterFailWarn'), err);
+            } else if (slot === 'siblings') {
+                console.warn('[Spine Picker]', t('siblingsMenuRegisterFailWarn'), err);
+            } else {
+                console.warn('[Spine Picker] menu register failed (' + slot + '):', err);
+            }
         }
     }
+
+    function reregisterAllMenus() {
+        // Tear down, then rebuild — language changes rotate every label.
+        for (const slot of Object.keys(MENU_IDS)) {
+            safeUnregister(MENU_IDS[slot]);
+            MENU_IDS[slot] = null;
+        }
+        safeRegister(t('menuTogglePicker'),
+                     () => { STATE.active ? deactivate() : activate(); },
+                     'togglePicker');
+        safeRegister(t('menuSiblings', SETTINGS.expandSiblings),
+                     toggleExpandSiblings,
+                     'siblings');
+        safeRegister(t('menuLeaves',   SETTINGS.expandToLeaves),
+                     toggleExpandToLeaves,
+                     'leaves');
+        safeRegister(t('menuLang',     SETTINGS.language),
+                     toggleLanguage,
+                     'lang');
+        console.log('[Spine Picker] menus registered:', MENU_IDS);
+    }
+
+    function refreshBanner() {
+        if (STATE.active && STATE.banner) STATE.banner.textContent = bannerText();
+    }
+
     function toggleExpandSiblings() {
         SETTINGS.expandSiblings = !SETTINGS.expandSiblings;
         saveSetting('expandSiblings', SETTINGS.expandSiblings);
-        // 嘗試 unregister 舊的、重註冊新 label；失敗就讓使用者重新整理才看到新 label
-        if (siblingsMenuId != null && typeof GM_unregisterMenuCommand === 'function') {
-            try { GM_unregisterMenuCommand(siblingsMenuId); } catch (_) {}
-        }
-        registerSiblingsMenu();
-        // 啟用中的 banner 也更新
-        if (STATE.active && STATE.banner) {
-            STATE.banner.textContent = bannerText();
-        }
-        showToast(`同級展開：${SETTINGS.expandSiblings ? '開' : '關'}`);
+        // Only siblings label needs refresh, but reregisterAllMenus is cheap
+        // enough that we don't bother with per-slot updates — keeps the
+        // toggle functions trivial and the menu state always consistent.
+        reregisterAllMenus();
+        refreshBanner();
+        showToast(t('toastSiblings', SETTINGS.expandSiblings));
     }
-    registerSiblingsMenu();
+
+    function toggleExpandToLeaves() {
+        SETTINGS.expandToLeaves = !SETTINGS.expandToLeaves;
+        saveSetting('expandToLeaves', SETTINGS.expandToLeaves);
+        reregisterAllMenus();
+        refreshBanner();
+        showToast(t('toastLeaves', SETTINGS.expandToLeaves));
+    }
+
+    function toggleLanguage() {
+        SETTINGS.language = SETTINGS.language === 'zh' ? 'en' : 'zh';
+        saveSetting('language', SETTINGS.language);
+        // Language flip rotates EVERY menu label (and the banner) — the same
+        // reregisterAllMenus() handles it uniformly.
+        reregisterAllMenus();
+        refreshBanner();
+        showToast(t('toastLang', SETTINGS.language));
+    }
+
+    reregisterAllMenus();
 
     document.addEventListener('keydown', (e) => {
         if (e.ctrlKey && e.shiftKey && (e.key === 'E' || e.key === 'e')) {
@@ -506,5 +702,5 @@
         }
     }, true);
 
-    console.log(`[Spine Picker] core ${CORE_VERSION} loaded | Ctrl+Shift+E 啟動 | 拾取中按 S 切換同級展開 | 目前同級展開: ${SETTINGS.expandSiblings ? 'on' : 'off'}`);
+    console.log(`[Spine Picker] core ${CORE_VERSION} loaded | Ctrl+Shift+E pick | in pick: S=siblings D=leaves L=lang | siblings=${SETTINGS.expandSiblings ? 'on' : 'off'} leaves=${SETTINGS.expandToLeaves ? 'on' : 'off'} lang=${SETTINGS.language}`);
 })();

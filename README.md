@@ -9,9 +9,11 @@
 - 滑鼠 hover 任意元素顯示藍色 overlay，標示當前指向的標籤
 - 點擊複製從 `<html>` 到 target 的祖先鏈，附 `<!-- TARGET -->` 標記
 - 自動過濾 hash class、過長屬性值與 inline event handler；保留語意屬性（`id`、`role`、`aria-*`、`data-*`、`href`、`src` 等）
-- 可選「同級展開」模式：列出 target 同層所有兄弟元素（含 `(child N/M)` 位置標記），方便 LLM 理解橫向脈絡
-- 鍵盤快捷鍵：`Ctrl+Shift+E` 啟動／停用、`Esc` 取消、拾取中按 `S` 切換同級展開
-- Tampermonkey 選單也提供切換入口；設定持久化於 GM storage
+- **同級展開模式**（`S`）：列出 target 同層所有兄弟元素（含 `(child N/M)` 位置標記），方便 LLM 理解橫向脈絡
+- **探到最底層模式**（`D`）：把 target 的所有子孫遞迴展開直至葉節點（上限 300 個元素，超過自動截斷以免剪貼簿爆掉）；不開啟時 target 子孫以 `<!-- ...N child nodes omitted... -->` 折疊
+- **中英文介面切換**（`L`）：UI 預設英文，可切換為中文；剪貼簿輸出維持英文（避免給 LLM 的 payload 混 locale）
+- 鍵盤快捷鍵：`Ctrl+Shift+E` 啟動／停用、`Esc` 取消、拾取中按 `S`／`D`／`L` 切換三項設定
+- Tampermonkey 選單也提供四個入口（切換拾取模式 + 三項設定）；設定持久化於 GM storage
 
 ## 安裝（end user）
 
@@ -24,17 +26,22 @@
 
 ## 使用
 
-- 任意網頁按 `Ctrl+Shift+E` 進入拾取模式（或從 Tampermonkey 選單選 `Spine Picker: 切換拾取模式`）。
+- 任意網頁按 `Ctrl+Shift+E` 進入拾取模式（或從 Tampermonkey 選單選 `Spine Picker: Toggle pick mode`）。
 - 移動滑鼠到目標元素上，藍框跟隨；點擊複製，畫面右下角會顯示已複製的 toast。
-- 同級展開：拾取模式中按 `S` 切換；亦可從 Tampermonkey 選單切換，狀態會持久化。
+- 進入拾取模式後 banner 顯示目前三項設定狀態，可即時切換：
+  - `S` — 切換「同級展開」（target 同層兄弟）
+  - `D` — 切換「探到最底層」（target 子孫遞迴展開）
+  - `L` — 切換 UI 語言（英／中）
+- 同三項設定亦可從 Tampermonkey 選單切換，狀態會持久化於 GM storage。
 
-複製到剪貼簿的格式（截錄）：
+複製到剪貼簿的格式（預設模式，截錄）：
 
 ```html
-<!-- url:      https://example.com/some/page -->
-<!-- selector: main > article > h2:nth-of-type(2) -->
-<!-- depth:    7 layers (html > body > div > main > article > h2) -->
-<!-- siblings: pruned -->
+<!-- url:        https://example.com/some/page -->
+<!-- selector:   main > article > h2:nth-of-type(2) -->
+<!-- depth:      7 layers (html > body > div > main > article > h2) -->
+<!-- siblings:   pruned -->
+<!-- descendants:pruned -->
 
 <html lang="en">
   <body class="page-content">
@@ -43,8 +50,26 @@
         <article class="post">
           <h2 class="post-title">  <!-- TARGET -->
             這是 target 的文字內容
-          </h2>
+            <!-- ...3 child nodes omitted... -->
 ```
+
+開啟「探到最底層」模式後同一份輸出（截錄）：
+
+```html
+<!-- siblings:   pruned -->
+<!-- descendants:leaves -->
+...
+          <h2 class="post-title">  <!-- TARGET -->
+            這是 target 的文字內容
+            <span class="badge">
+              new
+            </span>
+            <a href="/permalink/123">
+              read more
+            </a>
+```
+
+剪貼簿輸出固定為英文，無論介面語言為何 —— 這是給 LLM 的 payload，不混 locale。
 
 ## 已知限制
 
