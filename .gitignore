@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# 移轉前的單檔備份（若你手動留了）—— 不要入庫
+spine-picker.user.js.bak
+*.bak
+
+# 注意：dist/ 必須入庫（GitHub raw URL 對 end user 服這檔）
+# 不要把 dist/ 加進來
