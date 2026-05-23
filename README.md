@@ -22,11 +22,12 @@ For frameworks that emit hash class names (styled-components, Emotion, CSS Modul
 ## Installation (end user)
 
 1. Install [Tampermonkey](https://www.tampermonkey.net/) (Chrome, Edge, and Firefox all work).
-2. Click the link below; Tampermonkey will open an install dialog:
+2. Install spine-picker from one of the sources below; either one opens a Tampermonkey install dialog:
 
-   **[Install from GitHub Raw](https://raw.githubusercontent.com/k0504/spine-picker/main/dist/spine-picker.user.js)**
+   - **[Greasy Fork](https://greasyfork.org/en/scripts/579375-element-ancestor-spine-picker)** (recommended — comes with version history, ratings, and an issue thread on the listing page)
+   - **[GitHub Raw](https://raw.githubusercontent.com/k0504/spine-picker/main/dist/spine-picker.user.js)** (straight from the source repo)
 
-3. After installation, Tampermonkey periodically checks the same URL for updates; when the maintainer pushes a new version, an update prompt appears automatically.
+3. After installation, Tampermonkey periodically checks the source you installed from for updates; when a new version is published, an update prompt appears automatically. Greasy Fork mirrors the GitHub raw URL, so the same release lands on both within a few hours.
 
 ## Usage
 

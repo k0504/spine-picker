@@ -22,11 +22,12 @@
 ## 安裝（end user）
 
 1. 安裝 [Tampermonkey](https://www.tampermonkey.net/)（Chrome、Edge、Firefox 均可）。
-2. 點擊以下連結，Tampermonkey 將彈出安裝對話框：
+2. 從以下任一來源安裝 spine-picker，兩者皆會喚起 Tampermonkey 安裝對話框：
 
-   **[從 GitHub Raw 安裝](https://raw.githubusercontent.com/k0504/spine-picker/main/dist/spine-picker.user.js)**
+   - **[Greasy Fork](https://greasyfork.org/zh-TW/scripts/579375-element-ancestor-spine-picker)**（推薦 —— 上架頁附版本歷史、評分與 issue 討論串）
+   - **[GitHub Raw](https://raw.githubusercontent.com/k0504/spine-picker/main/dist/spine-picker.user.js)**（直接從原始 repo 取得）
 
-3. 安裝完成後,Tampermonkey 會定期向同一 URL 檢查更新;維護者推送新版時自動提示安裝。
+3. 安裝完成後，Tampermonkey 會定期向安裝來源檢查更新；新版本推出時自動提示安裝。Greasy Fork 鏡像 GitHub raw URL，同一份 release 通常數小時內在兩處同步上架。
 
 ## 使用
 
