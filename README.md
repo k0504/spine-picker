@@ -1,40 +1,44 @@
 # spine-picker
 
-於任意網頁上拾取元素，將其祖先脊椎（精簡 HTML 開放標籤鏈 + 唯一 CSS selector）複製到剪貼簿。輸出格式針對 LLM 場景設計，貼入對話即可讓模型準確理解使用者所指的是哪一個 UI 元素。
+**English** | [繁體中文](./README.zh-TW.md)
 
-對於 styled-components、Emotion、CSS Modules 等會產生 hash class 的框架，會自動過濾掉這類雜訊；最終輸出的 selector 以可讀類名 + `:nth-of-type` 構成。
+Working on frontend code with an LLM and not sure how to point at a specific element on the page? "The second button in the right sidebar" is ambiguous; pasting the entire DOM blows past the context window. spine-picker lets you point at the element with the mouse and copy a structurally meaningful description — the ancestor chain plus a unique selector, with framework-generated hash class noise already stripped — straight to the clipboard.
 
-## 功能
+Pick any element on any webpage and copy its ancestor spine (a minimal HTML opening-tag chain plus a unique CSS selector) to the clipboard. The output format is designed for LLM scenarios — pasting it into a conversation lets the model accurately identify which UI element the user is referring to.
 
-- 滑鼠 hover 任意元素顯示藍色 overlay，標示當前指向的標籤
-- 點擊複製從 `<html>` 到 target 的祖先鏈，附 `<!-- TARGET -->` 標記
-- 自動過濾 hash class、過長屬性值與 inline event handler；保留語意屬性（`id`、`role`、`aria-*`、`data-*`、`href`、`src` 等）
-- **同級展開模式**（`S`）：列出 target 同層所有兄弟元素（含 `(child N/M)` 位置標記），方便 LLM 理解橫向脈絡
-- **探到最底層模式**（`D`）：把 target 的所有子孫遞迴展開直至葉節點（上限 300 個元素，超過自動截斷以免剪貼簿爆掉）；不開啟時 target 子孫以 `<!-- ...N child nodes omitted... -->` 折疊
-- **中英文介面切換**（`L`）：UI 預設英文，可切換為中文；剪貼簿輸出維持英文（避免給 LLM 的 payload 混 locale）
-- 鍵盤快捷鍵：`Ctrl+Shift+E` 啟動／停用、`Esc` 取消、拾取中按 `S`／`D`／`L` 切換三項設定
-- Tampermonkey 選單也提供四個入口（切換拾取模式 + 三項設定）；設定持久化於 GM storage
+For frameworks that emit hash class names (styled-components, Emotion, CSS Modules, etc.), spine-picker automatically filters out that noise; the final selector is composed of readable class names plus `:nth-of-type`.
 
-## 安裝（end user）
+## Features
 
-1. 安裝 [Tampermonkey](https://www.tampermonkey.net/)（Chrome、Edge、Firefox 均可）。
-2. 點擊以下連結，Tampermonkey 將彈出安裝對話框：
+- Hover any element to display a blue overlay marking the current tag
+- Click to copy the ancestor chain from `<html>` down to the target, annotated with `<!-- TARGET -->`
+- Automatically strips hash classes, overlong attribute values, and inline event handlers; preserves semantic attributes (`id`, `role`, `aria-*`, `data-*`, `href`, `src`, etc.)
+- **Sibling expansion mode** (`S`): lists every sibling at the target's level (with `(child N/M)` position markers), giving the LLM the horizontal context
+- **Expand-to-leaves mode** (`D`): recursively expands all of the target's descendants down to leaf nodes (capped at 300 elements; truncated automatically beyond that to keep the clipboard payload manageable); when disabled, the target's descendants are folded as `<!-- ...N child nodes omitted... -->`
+- **UI language toggle** (`L`): UI defaults to English and can be switched to Traditional Chinese; clipboard output stays in English so the LLM payload does not mix locales
+- Keyboard shortcuts: `Ctrl+Shift+E` to activate / deactivate, `Esc` to cancel, `S` / `D` / `L` during picking to toggle the three settings
+- The Tampermonkey menu also exposes four entries (toggle pick mode + the three settings); preferences persist in GM storage
 
-   **[從 GitHub Raw 安裝](https://raw.githubusercontent.com/k0504/spine-picker/main/dist/spine-picker.user.js)**
+## Installation (end user)
 
-3. 安裝完成後，Tampermonkey 會定期向同一 URL 檢查更新；維護者推送新版時自動提示安裝。
+1. Install [Tampermonkey](https://www.tampermonkey.net/) (Chrome, Edge, and Firefox all work).
+2. Click the link below; Tampermonkey will open an install dialog:
 
-## 使用
+   **[Install from GitHub Raw](https://raw.githubusercontent.com/k0504/spine-picker/main/dist/spine-picker.user.js)**
 
-- 任意網頁按 `Ctrl+Shift+E` 進入拾取模式（或從 Tampermonkey 選單選 `Spine Picker: Toggle pick mode`）。
-- 移動滑鼠到目標元素上，藍框跟隨；點擊複製，畫面右下角會顯示已複製的 toast。
-- 進入拾取模式後 banner 顯示目前三項設定狀態，可即時切換：
-  - `S` — 切換「同級展開」（target 同層兄弟）
-  - `D` — 切換「探到最底層」（target 子孫遞迴展開）
-  - `L` — 切換 UI 語言（英／中）
-- 同三項設定亦可從 Tampermonkey 選單切換，狀態會持久化於 GM storage。
+3. After installation, Tampermonkey periodically checks the same URL for updates; when the maintainer pushes a new version, an update prompt appears automatically.
 
-複製到剪貼簿的格式（預設模式，截錄）：
+## Usage
+
+- On any webpage, press `Ctrl+Shift+E` to enter pick mode (or select `Spine Picker: Toggle pick mode` from the Tampermonkey menu).
+- Move the mouse to the target element; a blue frame follows. Click to copy; a confirmation toast appears at the bottom right.
+- Once pick mode is active, a banner shows the current state of all three settings, each of which can be toggled live:
+  - `S` — toggle "expand siblings" (target's same-level siblings)
+  - `D` — toggle "expand to leaves" (recursively expand the target's descendants)
+  - `L` — toggle UI language (English / 中文)
+- The same three settings can be toggled from the Tampermonkey menu; state persists in GM storage.
+
+Sample clipboard output (default mode, excerpt):
 
 ```html
 <!-- url:        https://example.com/some/page -->
@@ -49,18 +53,18 @@
       <main class="main">
         <article class="post">
           <h2 class="post-title">  <!-- TARGET -->
-            這是 target 的文字內容
+            this is the target text
             <!-- ...3 child nodes omitted... -->
 ```
 
-開啟「探到最底層」模式後同一份輸出（截錄）：
+The same target with "expand to leaves" mode enabled (excerpt):
 
 ```html
 <!-- siblings:   pruned -->
 <!-- descendants:leaves -->
 ...
           <h2 class="post-title">  <!-- TARGET -->
-            這是 target 的文字內容
+            this is the target text
             <span class="badge">
               new
             </span>
@@ -69,62 +73,62 @@
             </a>
 ```
 
-剪貼簿輸出固定為英文，無論介面語言為何 —— 這是給 LLM 的 payload，不混 locale。
+Clipboard output is always English regardless of the UI language — this is the payload for an LLM, so locales are kept consistent.
 
-## 已知限制
+## Known limitations
 
-- 嚴格 CSP（`script-src 'self'`、無 `unsafe-inline`）站點上，Tampermonkey 的部分注入模式可能讓 `GM_addStyle` 行為退化。多數站點不受影響。
-- 對 Shadow DOM 內部元素的拾取仰賴 `elementFromPoint` 是否穿透 shadow root，受瀏覽器與 host 設定影響；本腳本不主動穿透 closed shadow root。
-- 同級展開只列 target 自身的兄弟（第一層），不展開祖先層級的兄弟。
+- On sites with strict CSP (`script-src 'self'` and no `unsafe-inline`), some of Tampermonkey's injection modes may degrade `GM_addStyle` behavior. Most sites are unaffected.
+- Picking elements inside Shadow DOM relies on whether `elementFromPoint` pierces the shadow root, which varies by browser and host configuration; this script does not actively pierce closed shadow roots.
+- Sibling expansion only lists the target's own siblings (the first level); it does not expand ancestor-level siblings.
 
-## 開發
+## Development
 
-倉庫同時維護兩套 Tampermonkey 入口，分別面向端使用者與開發者。
+The repository maintains two Tampermonkey entry points — one for end users and one for developers.
 
-| 檔 | 用途 |
+| File | Purpose |
 | ---- | ---- |
-| `dist/spine-picker.user.js` | 端使用者安裝檔。由 `build.py` 從核心代碼生成，提交後通過 GitHub raw URL 對外分發。 |
-| `spine-picker.user.js` | 開發用 bootstrap，`@version` 永久鎖定為 `1.0.0`。僅負責從本地 HTTP 服務拉取核心代碼並執行，避免每次修改核心都需重新安裝 Tampermonkey。 |
-| `spine-picker-core.js` | 核心代碼。包含 overlay 渲染、屬性／class 過濾、selector 生成、剪貼簿輸出、選單註冊等全部邏輯。兩套入口共享同一份核心。 |
-| `serve.py` | 本地 HTTP 服務（預設 `127.0.0.1:8767`）。僅供 dev bootstrap 拉取核心代碼，端使用者無需執行。 |
-| `build.py` | 將核心代碼打包為 `dist/spine-picker.user.js`，並自動從核心代碼中提取 `CORE_VERSION` 寫入 `@version`。 |
+| `dist/spine-picker.user.js` | End-user install file. Generated by `build.py` from the core source; once committed, distributed to end users via the GitHub raw URL. |
+| `spine-picker.user.js` | Development bootstrap. `@version` is permanently pinned to `1.0.0`. Its only job is to fetch the core source from a local HTTP server and execute it, so editing the core does not require reinstalling in Tampermonkey. |
+| `spine-picker-core.js` | The core source. Contains overlay rendering, attribute / class filtering, selector generation, clipboard output, menu registration, and all other logic. Both entry points share this single core. |
+| `serve.py` | Local HTTP server (defaults to `127.0.0.1:8767`). Used only by the dev bootstrap to fetch the core; end users never need to run it. |
+| `build.py` | Packages the core into `dist/spine-picker.user.js`, automatically extracting `CORE_VERSION` from the core source into `@version`. |
 
-### 開發循環
+### Dev loop
 
 ```bash
 python serve.py
-# 瀏覽器位址列訪問 http://127.0.0.1:8767/spine-picker.user.js
-# Tampermonkey 彈出安裝對話框，確認安裝 bootstrap（僅需一次）
+# Open http://127.0.0.1:8767/spine-picker.user.js in the browser address bar
+# Tampermonkey opens an install dialog; confirm the bootstrap installation (one-time)
 ```
 
-隨後編輯 `spine-picker-core.js`，重新整理任意網頁即可生效。bootstrap 每次都會附加 cache-bust 參數，無需手動清除快取。
+Afterwards, edit `spine-picker-core.js` and reload any webpage to see the changes. The bootstrap appends a cache-bust parameter every time, so no manual cache clearing is required.
 
-**CSP 注意**：bootstrap 透過 `eval` 載入核心代碼。`script-src` 禁止 `'unsafe-eval'` 的網站（如 github.com、twitter.com、多數銀行）會阻擋核心執行；console 會看到 `EvalError` 且右下角顯示紅色錯誤條。dev 模式請挑 CSP 寬鬆的測試站（example.com、自架頁面）；嚴格 CSP 站需直接安裝 `dist/spine-picker.user.js`。
+**CSP note**: the bootstrap loads the core via `eval`. Sites whose `script-src` directive forbids `'unsafe-eval'` (such as github.com, twitter.com, most banking sites) will block core execution; you will see `EvalError` in the console and a red error bar at the bottom right. For development, choose CSP-permissive test sites (example.com, locally hosted pages); for strict-CSP sites, install `dist/spine-picker.user.js` directly.
 
-### 發版
+### Release
 
-1. 修改 `spine-picker-core.js` 頂端的 `CORE_VERSION`。Tampermonkey 僅在版本號增大時觸發自動更新。
-2. 執行 `python build.py` 重新生成 `dist/spine-picker.user.js`。
-3. 提交核心代碼與 `dist/` 目錄並推送到 GitHub。Tampermonkey 通常在 24 小時內為端使用者拉取新版本。
+1. Bump `CORE_VERSION` at the top of `spine-picker-core.js`. Tampermonkey only triggers an auto-update when the version number increases.
+2. Run `python build.py` to regenerate `dist/spine-picker.user.js`.
+3. Commit the core source plus the `dist/` directory and push to GitHub. Tampermonkey typically picks up the new version for end users within 24 hours.
 
-### 偵錯接口
+### Debug hooks
 
-核心代碼將 `__spinePickerLoaded` 與 `__spinePickerVersion` 設定於 `window`，可於 DevTools Console 中查詢當前版本：
+The core sets `__spinePickerLoaded` and `__spinePickerVersion` on `window`; the current version can be queried from the DevTools Console:
 
 ```js
 window.__spinePickerVersion
 // "0.2.1"
 ```
 
-### bootstrap 安裝注意事項
+### Bootstrap installation notes
 
-- 必須在瀏覽器位址列直接訪問 `http://127.0.0.1:8767/spine-picker.user.js`。Tampermonkey 官網的 `script_installation.php?url=...` 中轉頁對本地 HTTP 資源不會 redirect。
-- 本地服務回應的 `Content-Type` 必須為 `application/javascript`，`serve.py` 已強制此值。
-- 若 Tampermonkey 拒絕安裝，於 Dashboard 中將 **Settings → Config mode** 切換為 `Advanced`，並在 **Security → Allow scripts to access cross-origin resources** 中勾選允許。
+- The browser must visit `http://127.0.0.1:8767/spine-picker.user.js` directly via the address bar. Tampermonkey's `script_installation.php?url=...` intermediate page does not redirect to local HTTP resources.
+- The local server must respond with `Content-Type: application/javascript`; `serve.py` enforces this.
+- If Tampermonkey refuses to install, switch **Settings → Config mode** to `Advanced` in the dashboard, and tick **Security → Allow scripts to access cross-origin resources**.
 
-### 為何不使用 Tampermonkey 的 `@updateURL` 自動更新（dev）
+### Why not Tampermonkey's `@updateURL` for dev auto-update
 
-Tampermonkey 拒絕 `http://127.0.0.1` 作為 `@updateURL`（insecure-origin policy）。dev 用 bootstrap 的存在即為解決此限制：bootstrap 自身鎖定版本永不更新，核心邏輯則由本地 HTTP 服務每次重新拉取。端使用者安裝的 `dist/` 檔案通過 GitHub raw URL 分發，不受此限制影響。
+Tampermonkey rejects `http://127.0.0.1` as `@updateURL` (insecure-origin policy). The dev bootstrap exists precisely to work around this restriction: the bootstrap itself is version-locked and never updates, while the core logic is re-fetched from the local HTTP server every time. The `dist/` file that end users install is distributed via the GitHub raw URL and is not subject to this restriction.
 
 ## License
 
