@@ -62,19 +62,21 @@ def build_header(version):
     gotcha in AGENTS.md.
     """
     # i18n convention: default (no locale tag) is English — the most universal
-    # fallback. Explicit `:zh-TW` variants get picked when the user's locale
-    # matches (Tampermonkey reads the browser language; Greasy Fork reads the
-    # URL prefix /zh-TW/...). Locales without an explicit tag fall through to
-    # the default. Adding a new locale = one more `@name:xx` + `@description:xx`
-    # line, both languages stay in sync via this file.
+    # fallback. Explicit `:zh-TW` / `:zh-CN` variants get picked when the user's
+    # locale matches (Tampermonkey reads the browser language; Greasy Fork reads
+    # the URL prefix /zh-TW/... or /zh-CN/...). Locales without an explicit tag
+    # fall through to the default. Adding a new locale = one more `@name:xx` +
+    # `@description:xx` line, all locales stay in sync via this file.
     lines = [
         '// ==UserScript==',
         '// @name              Element Ancestor Spine Picker',
         '// @name:zh-TW        元素祖先脊椎拾取器',
+        '// @name:zh-CN        元素祖先脊椎拾取器',
         '// @namespace         https://github.com/%s/%s' % (GH_USER, GH_REPO),
         '// @version           ' + version,
         '// @description       Pick an element on any page and copy its ancestor chain (trimmed HTML + unique selector) to the clipboard, ready to paste into an LLM that needs to know exactly which UI element you mean.',
         '// @description:zh-TW 拾取元素，複製祖先脊椎（精簡 HTML + unique selector）到剪貼簿，給 LLM 精確指認 UI 位置用',
+        '// @description:zh-CN 拾取元素，复制祖先脊椎（精简 HTML + unique selector）到剪贴板，给 LLM 精确指认 UI 位置用',
         '// @author            %s' % GH_USER,
         '// @homepageURL       https://github.com/%s/%s' % (GH_USER, GH_REPO),
         '// @supportURL        https://github.com/%s/%s/issues' % (GH_USER, GH_REPO),

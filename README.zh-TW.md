@@ -1,6 +1,6 @@
 # spine-picker
 
-[English](./README.md) | **繁體中文**
+[English](./README.md) | **繁體中文** | [简体中文](./README.zh-CN.md)
 
 在涉及前端的編碼過程中，不知道如何向 LLM 描述指定的網頁元素或結構？「右側欄第二個按鈕」太模糊，整段 DOM 又會撐爆 context window。spine-picker 讓你用滑鼠對著元素一點，將具結構意義的描述（祖先鏈 + 唯一 selector，已自動過濾框架產生的 hash class 雜訊）直接複製到剪貼簿。
 

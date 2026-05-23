@@ -1,10 +1,12 @@
 // ==UserScript==
 // @name              Element Ancestor Spine Picker
 // @name:zh-TW        元素祖先脊椎拾取器
+// @name:zh-CN        元素祖先脊椎拾取器
 // @namespace         https://github.com/k0504/spine-picker
-// @version           0.3.1
+// @version           0.3.2
 // @description       Pick an element on any page and copy its ancestor chain (trimmed HTML + unique selector) to the clipboard, ready to paste into an LLM that needs to know exactly which UI element you mean.
 // @description:zh-TW 拾取元素，複製祖先脊椎（精簡 HTML + unique selector）到剪貼簿，給 LLM 精確指認 UI 位置用
+// @description:zh-CN 拾取元素，复制祖先脊椎（精简 HTML + unique selector）到剪贴板，给 LLM 精确指认 UI 位置用
 // @author            k0504
 // @homepageURL       https://github.com/k0504/spine-picker
 // @supportURL        https://github.com/k0504/spine-picker/issues
@@ -24,7 +26,7 @@
 
 /*
  * AUTO-GENERATED — do not edit by hand.
- * Source: spine-picker-core.js (CORE_VERSION = 0.3.1)
+ * Source: spine-picker-core.js (CORE_VERSION = 0.3.2)
  * Regenerate with: python build.py
  *
  * For dev workflow (edit core + reload tab without rebuilding) see
@@ -60,7 +62,7 @@
     // Bump on every meaningful change. dist's @version is derived from this
     // by build.py — bump CORE_VERSION → run build.py → commit dist/ to push
     // an update to end users (TM only auto-updates when @version increases).
-    var CORE_VERSION = '0.3.1';
+    var CORE_VERSION = '0.3.2';
 
     // Defensive: if bootstrap fires twice (shouldn't, but) or dist + dev
     // bootstrap are both installed, the second load no-ops.

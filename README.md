@@ -1,6 +1,6 @@
 # spine-picker
 
-**English** | [繁體中文](./README.zh-TW.md)
+**English** | [繁體中文](./README.zh-TW.md) | [简体中文](./README.zh-CN.md)
 
 Working on frontend code with an LLM and not sure how to point at a specific element on the page? "The second button in the right sidebar" is ambiguous; pasting the entire DOM blows past the context window. spine-picker lets you point at the element with the mouse and copy a structurally meaningful description — the ancestor chain plus a unique selector, with framework-generated hash class noise already stripped — straight to the clipboard.
 
