@@ -61,28 +61,35 @@ def build_header(version):
     sync with bootstrap — there's no programmatic check, it's a documented
     gotcha in AGENTS.md.
     """
+    # i18n convention: default (no locale tag) is English — the most universal
+    # fallback. Explicit `:zh-TW` variants get picked when the user's locale
+    # matches (Tampermonkey reads the browser language; Greasy Fork reads the
+    # URL prefix /zh-TW/...). Locales without an explicit tag fall through to
+    # the default. Adding a new locale = one more `@name:xx` + `@description:xx`
+    # line, both languages stay in sync via this file.
     lines = [
         '// ==UserScript==',
-        '// @name         Element Ancestor Spine Picker',
-        '// @namespace    https://github.com/%s/%s' % (GH_USER, GH_REPO),
-        '// @version      ' + version,
-        '// @description  拾取元素，複製祖先脊椎（精簡 HTML + unique selector）到剪貼簿，給 LLM 精確指認 UI 位置用',
-        '// @description:en  Pick an element on any page and copy its ancestor chain (trimmed HTML + unique selector) to clipboard, ready to paste into an LLM that needs to know exactly which UI element you mean.',
-        '// @author       %s' % GH_USER,
-        '// @homepageURL  https://github.com/%s/%s' % (GH_USER, GH_REPO),
-        '// @supportURL   https://github.com/%s/%s/issues' % (GH_USER, GH_REPO),
-        '// @updateURL    %s/spine-picker.user.js' % RAW_BASE,
-        '// @downloadURL  %s/spine-picker.user.js' % RAW_BASE,
-        '// @match        *://*/*',
-        '// @grant        GM_setClipboard',
-        '// @grant        GM_registerMenuCommand',
-        '// @grant        GM_unregisterMenuCommand',
-        '// @grant        GM_addStyle',
-        '// @grant        GM_setValue',
-        '// @grant        GM_getValue',
-        '// @run-at       document-idle',
+        '// @name              Element Ancestor Spine Picker',
+        '// @name:zh-TW        元素祖先脊椎拾取器',
+        '// @namespace         https://github.com/%s/%s' % (GH_USER, GH_REPO),
+        '// @version           ' + version,
+        '// @description       Pick an element on any page and copy its ancestor chain (trimmed HTML + unique selector) to the clipboard, ready to paste into an LLM that needs to know exactly which UI element you mean.',
+        '// @description:zh-TW 拾取元素，複製祖先脊椎（精簡 HTML + unique selector）到剪貼簿，給 LLM 精確指認 UI 位置用',
+        '// @author            %s' % GH_USER,
+        '// @homepageURL       https://github.com/%s/%s' % (GH_USER, GH_REPO),
+        '// @supportURL        https://github.com/%s/%s/issues' % (GH_USER, GH_REPO),
+        '// @updateURL         %s/spine-picker.user.js' % RAW_BASE,
+        '// @downloadURL       %s/spine-picker.user.js' % RAW_BASE,
+        '// @match             *://*/*',
+        '// @grant             GM_setClipboard',
+        '// @grant             GM_registerMenuCommand',
+        '// @grant             GM_unregisterMenuCommand',
+        '// @grant             GM_addStyle',
+        '// @grant             GM_setValue',
+        '// @grant             GM_getValue',
+        '// @run-at            document-idle',
         '// @noframes',
-        '// @license      MIT',
+        '// @license           MIT',
         '// ==/UserScript==',
         '',
         '/*',

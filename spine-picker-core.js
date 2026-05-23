@@ -27,7 +27,7 @@
     // Bump on every meaningful change. dist's @version is derived from this
     // by build.py — bump CORE_VERSION → run build.py → commit dist/ to push
     // an update to end users (TM only auto-updates when @version increases).
-    var CORE_VERSION = '0.3.0';
+    var CORE_VERSION = '0.3.1';
 
     // Defensive: if bootstrap fires twice (shouldn't, but) or dist + dev
     // bootstrap are both installed, the second load no-ops.

@@ -1,29 +1,30 @@
 // ==UserScript==
-// @name         Element Ancestor Spine Picker
-// @namespace    https://github.com/k0504/spine-picker
-// @version      0.3.0
-// @description  拾取元素，複製祖先脊椎（精簡 HTML + unique selector）到剪貼簿，給 LLM 精確指認 UI 位置用
-// @description:en  Pick an element on any page and copy its ancestor chain (trimmed HTML + unique selector) to clipboard, ready to paste into an LLM that needs to know exactly which UI element you mean.
-// @author       k0504
-// @homepageURL  https://github.com/k0504/spine-picker
-// @supportURL   https://github.com/k0504/spine-picker/issues
-// @updateURL    https://raw.githubusercontent.com/k0504/spine-picker/main/dist/spine-picker.user.js
-// @downloadURL  https://raw.githubusercontent.com/k0504/spine-picker/main/dist/spine-picker.user.js
-// @match        *://*/*
-// @grant        GM_setClipboard
-// @grant        GM_registerMenuCommand
-// @grant        GM_unregisterMenuCommand
-// @grant        GM_addStyle
-// @grant        GM_setValue
-// @grant        GM_getValue
-// @run-at       document-idle
+// @name              Element Ancestor Spine Picker
+// @name:zh-TW        元素祖先脊椎拾取器
+// @namespace         https://github.com/k0504/spine-picker
+// @version           0.3.1
+// @description       Pick an element on any page and copy its ancestor chain (trimmed HTML + unique selector) to the clipboard, ready to paste into an LLM that needs to know exactly which UI element you mean.
+// @description:zh-TW 拾取元素，複製祖先脊椎（精簡 HTML + unique selector）到剪貼簿，給 LLM 精確指認 UI 位置用
+// @author            k0504
+// @homepageURL       https://github.com/k0504/spine-picker
+// @supportURL        https://github.com/k0504/spine-picker/issues
+// @updateURL         https://raw.githubusercontent.com/k0504/spine-picker/main/dist/spine-picker.user.js
+// @downloadURL       https://raw.githubusercontent.com/k0504/spine-picker/main/dist/spine-picker.user.js
+// @match             *://*/*
+// @grant             GM_setClipboard
+// @grant             GM_registerMenuCommand
+// @grant             GM_unregisterMenuCommand
+// @grant             GM_addStyle
+// @grant             GM_setValue
+// @grant             GM_getValue
+// @run-at            document-idle
 // @noframes
-// @license      MIT
+// @license           MIT
 // ==/UserScript==
 
 /*
  * AUTO-GENERATED — do not edit by hand.
- * Source: spine-picker-core.js (CORE_VERSION = 0.3.0)
+ * Source: spine-picker-core.js (CORE_VERSION = 0.3.1)
  * Regenerate with: python build.py
  *
  * For dev workflow (edit core + reload tab without rebuilding) see
@@ -59,7 +60,7 @@
     // Bump on every meaningful change. dist's @version is derived from this
     // by build.py — bump CORE_VERSION → run build.py → commit dist/ to push
     // an update to end users (TM only auto-updates when @version increases).
-    var CORE_VERSION = '0.3.0';
+    var CORE_VERSION = '0.3.1';
 
     // Defensive: if bootstrap fires twice (shouldn't, but) or dist + dev
     // bootstrap are both installed, the second load no-ops.
